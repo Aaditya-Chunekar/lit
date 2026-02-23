@@ -12,6 +12,11 @@ import re
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 try:
     from lingodotdev import LingoDotDevEngine
 except ImportError:

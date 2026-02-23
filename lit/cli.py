@@ -1,5 +1,5 @@
 """
-Typer CLI application for the lit command.
+CLI router for the lit command.
 
 Routes commands:
 - lit commit → special flow with translation and Conventional Commits
@@ -8,27 +8,15 @@ Routes commands:
 
 import asyncio
 import sys
-from typing import Optional
-
-import typer
 from rich.console import Console
 
 from lit.commit_flow import run_commit_flow
 from lit.git_utils import passthrough_git_command
 
-app = typer.Typer(
-    name="lit",
-    help="Type how you think, commit effortlessly. Git wrapper with AI-powered commits.",
-    no_args_is_help=False,
-    invoke_without_command=True,
-)
 console = Console()
 
 
-@app.callback(invoke_without_command=True)
-def main(
-    ctx: typer.Context,
-) -> None:
+def main() -> None:
     """
     Main entry point for the lit CLI.
 
@@ -36,22 +24,27 @@ def main(
     - commit flow if 'commit' is the first argument
     - git passthrough for all other commands
     """
-    # Get raw arguments
     args = sys.argv[1:]
 
-    if not args:
-        # No arguments: show help
-        console.print(app.get_help(ctx))
-        raise typer.Exit(0)
+    if not args or args[0] in ["--help", "-h", "help"]:
+        # No arguments or help requested: show help
+        console.print("[cyan]lit[/cyan] - Type how you think, commit effortlessly.")
+        console.print()
+        console.print("Usage: [cyan]lit <git-command>[/cyan] or [cyan]lit commit -m \"message\"[/cyan]")
+        console.print()
+        console.print("Examples:")
+        console.print("  [cyan]lit status[/cyan]              # Git passthrough")
+        console.print("  [cyan]lit push origin main[/cyan]    # Git passthrough")
+        console.print("  [cyan]lit commit -m \"message\"[/cyan] # AI-powered commit")
+        sys.exit(0)
 
     # Check if the first argument is 'commit'
     if args[0] == "commit":
-        # Handle special commit flow
         _handle_commit(args)
     else:
         # Passthrough to git
         exit_code = passthrough_git_command()
-        raise typer.Exit(exit_code)
+        sys.exit(exit_code)
 
 
 def _handle_commit(args: list[str]) -> None:
@@ -68,7 +61,6 @@ def _handle_commit(args: list[str]) -> None:
     """
     # Extract the message from -m flag
     message = None
-    has_amend = "--amend" in args or "-a" in args
 
     for i, arg in enumerate(args):
         if arg == "-m" and i + 1 < len(args):
@@ -80,20 +72,16 @@ def _handle_commit(args: list[str]) -> None:
             "[red]Error:[/red] Commit requires a message. Use: [cyan]lit commit -m \"message\"[/cyan]",
             style="bold red",
         )
-        raise typer.Exit(1)
+        sys.exit(1)
 
     # Run the async commit flow
     try:
         success = asyncio.run(run_commit_flow(message))
         exit_code = 0 if success else 1
-        raise typer.Exit(exit_code)
+        sys.exit(exit_code)
     except KeyboardInterrupt:
         console.print("\n[yellow]Interrupted.[/yellow]")
-        raise typer.Exit(1)
+        sys.exit(1)
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}", style="bold red")
-        raise typer.Exit(1)
-
-
-if __name__ == "__main__":
-    app()
+        sys.exit(1)
