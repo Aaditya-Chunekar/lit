@@ -194,14 +194,6 @@ pip install -e ".[dev]"
 pytest
 ```
 
-### Code Quality
-
-```bash
-black lit/
-ruff check lit/
-mypy lit/
-```
-
 ## Example Scenarios
 
 ### Scenario 1: Hinglish Commit
@@ -264,23 +256,6 @@ d4e5f6g feat: implement oauth integration
 ...
 ```
 
-## Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-thing`)
-3. Commit with conventional commits
-4. Push and open a PR
-
 ## License
 
 MIT
-
-## Author
-
-Built with ❤️ for developers who think differently.
-
----
-
-**Tagline:** Type how you think, commit effortlessly.

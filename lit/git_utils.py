@@ -4,6 +4,7 @@ Git utility functions for subprocess-based git operations.
 Provides wrappers for common git operations with proper error handling.
 """
 
+import glob
 import subprocess
 import sys
 from pathlib import Path
@@ -100,12 +101,31 @@ def passthrough_git_command() -> int:
 
     This function extracts all command-line arguments after the program name
     and passes them to git, preserving exit codes and streaming output.
+    
+    Handles glob patterns (e.g., README*, *.py) by expanding them.
 
     Returns:
         int: The exit code from the git command.
     """
+    args = sys.argv[1:]
+    
+    # Expand glob patterns in arguments (for * and ? wildcards)
+    expanded_args = []
+    for arg in args:
+        if '*' in arg or '?' in arg:
+            # Try to expand the glob pattern
+            matches = glob.glob(arg)
+            if matches:
+                # Glob matched files, use expanded list
+                expanded_args.extend(sorted(matches))
+            else:
+                # No matches, pass the argument as-is (git will handle it)
+                expanded_args.append(arg)
+        else:
+            expanded_args.append(arg)
+    
     try:
-        result = subprocess.run(["git"] + sys.argv[1:])
+        result = subprocess.run(["git"] + expanded_args)
         return result.returncode
     except FileNotFoundError:
         print(
