@@ -2,107 +2,285 @@
 
 **Type how you think, commit effortlessly.**
 
-`lit` is an AI-powered git wrapper that translates your natural language (even Hinglish!) into clean, conventional commits. All other git commands work exactly as expected.
+A production-ready Python CLI tool that wraps `git` and intelligently generates **Conventional Commits** using AI translation and diff analysis.
 
 ## Features
 
-- ✨ AI-powered commit message generation
-- 🌍 Multi-language support (Hinglish, English, etc.)
-- 📝 Conventional Commits format
-- 🎯 Smart commit type detection
-- 🚀 Zero-config git proxy
-- 💅 Beautiful interactive prompts
+✨ **Intelligent Commit Generation**
+- Detects and translates mixed languages (e.g., Hinglish, Hindi + English)
+- Analyzes git diffs to understand changes
+- Generates properly formatted Conventional Commits
+- Interactive preview and confirmation
+
+🎯 **Pure Git Passthrough**
+- All non-commit commands behave exactly like `git`
+- No friction, no surprises
+- Full git compatibility
+
+🚀 **Production-Ready**
+- Async SDK integration with proper error handling
+- Fallback heuristics if translation fails
+- Clean, premium CLI UX with rich output
+- Modular, testable codebase
 
 ## Installation
 
 ```bash
-npm install -g lit
+pip install lit-cli
 ```
 
-Or run locally:
+Or from source:
 
 ```bash
-npm install
-npm link
+git clone https://github.com/yourusername/lit.git
+cd lit
+pip install -e .
 ```
 
-## Configuration
+## Setup
 
-Create a `.env` file:
+Set your Lingo.dev API key:
 
 ```bash
-LINGO_API_URL=https://api.lingo.dev/v1/generate
-LINGO_API_KEY=your_api_key_here
+export LINGODOTDEV_API_KEY="your-api-key-here"
 ```
 
 ## Usage
 
-### AI-Powered Commits
+### Git Commands (Passthrough)
+
+All standard git commands work exactly as expected:
 
 ```bash
-# Stage your files
-lit add .
-
-# Commit with natural language
-lit commit -m "login bug fix aur validation add kiya"
-
-# Output:
-# fix: correct login validation logic
-#
-# - add required field checks
-# - resolve authentication flow issue
+lit status                          # → git status
+lit add file.py                     # → git add file.py
+lit log --oneline                   # → git log --oneline
+lit checkout -b feature-branch      # → git checkout -b feature-branch
+lit push -u origin main             # → git push -u origin main
+lit merge develop                   # → git merge develop
 ```
 
-### All Other Git Commands (Proxied)
+### Commit with AI Translation
+
+The **only** special command is `lit commit`:
 
 ```bash
-lit status
-lit push origin main
-lit checkout -b feature/new-feature
-lit log --oneline
-lit branch
-lit pull
+lit commit -m "login ka bug fix kiya aur validation add kiya"
 ```
 
-Everything works exactly like `git`!
+**What happens:**
 
-## How It Works
+1. ✅ **Validation**: Checks if files are staged
+2. 🔄 **Translation**: Detects Hinglish, translates to English
+3. 📊 **Analysis**: Examines the git diff
+4. 🤖 **Generation**: Creates a Conventional Commit via Lingo.dev
+5. 👀 **Preview**: Shows you the formatted commit
+6. ⚡ **Confirmation**: Ask accept, edit, or cancel
 
-1. You stage files normally: `lit add .`
-2. Run commit with natural language: `lit commit -m "your message"`
-3. `lit` analyzes your diff and translates your message
-4. Review the generated conventional commit
-5. Accept, edit, or cancel
+```
+┌──────────────────────────────────────────┐
+│         Commit Preview                   │
+├──────────────────────────────────────────┤
+│ fix: add validation checks to login      │
+│                                          │
+│ - detect missing required fields         │
+│ - resolve null pointer issue             │
+│ - improve error messages                 │
+└──────────────────────────────────────────┘
 
-## API Integration
+Commit with this message?
+→ ✓ Accept
+  ✏ Edit manually
+  ✗ Cancel
+```
 
-`lit` uses the Lingo.dev API for intelligent translation and diff analysis. If the API is unavailable, it falls back to smart heuristics.
+## Conventional Commit Format
 
-## Fallback Behavior
+Generated commits follow the standard format:
 
-Without API credentials, `lit` uses built-in heuristics:
-- Keyword detection (fix, feat, docs, etc.)
-- Diff analysis (file patterns, change ratios)
-- Smart commit type classification
+```
+<type>(<optional scope>): <description>
 
-## Requirements
+<body explaining what and why>
+```
 
-- Node.js >= 18
-- Git installed and configured
+**Types:**
+- `feat`: A new feature
+- `fix`: A bug fix
+- `refactor`: Code refactoring
+- `docs`: Documentation changes
+- `chore`: Build, CI, dependencies
+- `test`: Adding tests
+- `perf`: Performance improvements
+
+**Example:**
+
+```
+fix: correct login validation logic
+
+- add required field checks
+- resolve null pointer issue
+- improve error message clarity
+```
+
+## Architecture
+
+```
+lit/
+├── __main__.py        # Entry point
+├── cli.py             # Typer router
+├── git_utils.py       # Git subprocess wrappers
+├── lingo_utils.py     # Lingo SDK integration
+├── commit_flow.py     # Commit orchestration
+└── __init__.py        # Package exports
+```
+
+### Module Responsibilities
+
+- **cli.py**: Routes commands → commit flow or git passthrough
+- **git_utils.py**: Subprocess wrappers for git operations
+- **lingo_utils.py**: Async Lingo.dev SDK integration + JSON parsing
+- **commit_flow.py**: Orchestrates the full commit workflow
+- **__main__.py**: CLI entrypoint
+
+## Error Handling
+
+The tool gracefully handles:
+
+❌ **Missing LINGODOTDEV_API_KEY**
+→ Clear error message with setup instructions
+
+❌ **No Staged Files**
+→ Helpful message: "Run `git add` first"
+
+❌ **Invalid JSON from SDK**
+→ Fallback heuristic generation
+
+❌ **Network/SDK Errors**
+→ Automatic fallback to keyword-based commit generation
+
+❌ **Git Errors**
+→ Passes through git's error messages
+
+## Fallback Heuristics
+
+If the Lingo SDK fails, `lit` uses smart fallbacks:
+
+- If message contains "fix", "bug", "issue" → `type: fix`
+- If new files are added → `type: feat`
+- If only formatting changes → `type: chore`
+- Default → `type: refactor`
 
 ## Tech Stack
 
-- Node.js ES Modules
-- commander (CLI framework)
-- simple-git (Git operations)
-- @clack/prompts (Interactive UI)
-- picocolors (Terminal colors)
-- Native fetch (HTTP requests)
+- **Python 3.11+**: Modern Python with async support
+- **Typer**: Command-line interface framework
+- **rich**: Beautiful terminal output
+- **questionary**: Interactive prompts
+- **lingodotdev**: AI translation and analysis SDK
+- **subprocess**: Direct git integration
+
+## Development
+
+### Install Dependencies
+
+```bash
+pip install -e ".[dev]"
+```
+
+### Run Tests
+
+```bash
+pytest
+```
+
+### Code Quality
+
+```bash
+black lit/
+ruff check lit/
+mypy lit/
+```
+
+## Example Scenarios
+
+### Scenario 1: Hinglish Commit
+
+```bash
+$ git add auth_module.py validation.py
+$ lit commit -m "login ka bug fix kiya aur validation add kiya"
+```
+
+Output:
+```
+⟳ Translating and analyzing via Lingo.dev...
+
+┌─────────────────────────────────────────┐
+│        Commit Preview                   │
+├─────────────────────────────────────────┤
+│ fix: add validation checks to login     │
+│                                         │
+│ - implement required field validation   │
+│ - resolve null pointer exception        │
+│ - improve error message handling        │
+└─────────────────────────────────────────┘
+
+Commit with this message?
+→ ✓ Accept
+  ✏ Edit manually
+  ✗ Cancel
+
+✓ Commit successful!
+fix: add validation checks to login
+```
+
+### Scenario 2: API Key Missing
+
+```bash
+$ lit commit -m "fix: add tests"
+Error: LINGODOTDEV_API_KEY environment variable is not set.
+Please set it to use the commit translation feature.
+```
+
+### Scenario 3: No Staged Files
+
+```bash
+$ lit commit -m "fix: cleanup"
+Error: No staged files. Run git add first.
+```
+
+### Scenario 4: Regular Git Commands
+
+```bash
+$ lit status
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+
+$ lit log --oneline -5
+a1b2c3d (HEAD -> main) fix: add validation checks to login
+d4e5f6g feat: implement oauth integration
+...
+```
+
+## Contributing
+
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-thing`)
+3. Commit with conventional commits
+4. Push and open a PR
 
 ## License
 
 MIT
 
-## Contributing
+## Author
 
-Contributions welcome! This is a hackathon project built for real-world use.
+Built with ❤️ for developers who think differently.
+
+---
+
+**Tagline:** Type how you think, commit effortlessly.
